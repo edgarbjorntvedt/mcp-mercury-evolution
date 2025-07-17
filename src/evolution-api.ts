@@ -32,10 +32,26 @@ export class MercuryEvolutionAPI {
   private currentSession: Session | null = null;
 
   constructor(vaultPath?: string) {
-    // Default to looking for Mercury in common Obsidian vault locations
+    // Use BrainVault's .mercury directory
+    const obsidianVault = process.env.OBSIDIAN_VAULT_PATH || 
+      '/Users/bard/Code/claude-brain/data/BrainVault';
+    
     this.mercuryPath = vaultPath || 
       process.env.MERCURY_VAULT_PATH || 
-      path.join(process.env.HOME || '', 'Documents', 'Obsidian', '.mercury');
+      path.join(obsidianVault, '.mercury');
+    
+    // Ensure Mercury directory exists in the vault
+    this.ensureMercuryDir();
+  }
+  
+  private async ensureMercuryDir(): Promise<void> {
+    try {
+      await fs.mkdir(this.mercuryPath, { recursive: true });
+      await fs.mkdir(path.join(this.mercuryPath, 'evolution'), { recursive: true });
+      await fs.mkdir(path.join(this.mercuryPath, 'sessions'), { recursive: true });
+    } catch (error) {
+      console.error('Failed to create Mercury directories:', error);
+    }
   }
 
   /**
@@ -206,7 +222,59 @@ export class MercuryEvolutionAPI {
     };
   }
 
-  // Helper methods
+  /**
+   * Track when Brain accesses notes - integrates with real note navigation
+   */
+  async trackBrainNoteAccess(
+    action: 'create' | 'read' | 'update' | 'delete' | 'list',
+    notePath: string,
+    fromNote?: string
+  ): Promise<void> {
+    // Clean up the path to be relative to vault
+    const cleanPath = notePath.replace(/^\//, '');
+    
+    // Auto-start session if needed
+    if (!this.currentSession) {
+      await this.startTracking('brain-navigation');
+    }
+    
+    // Map Brain actions to Mercury types
+    const typeMap = {
+      'create': 'create',
+      'read': 'note',
+      'update': 'note',
+      'delete': 'note',
+      'list': 'search'
+    };
+    
+    // Record the real note access
+    await this.recordStep(cleanPath, typeMap[action]);
+    
+    // Log real navigation for debugging
+    console.error(`Mercury tracked: ${action} ${cleanPath}`);
+  }
+
+  /**
+   * Get real vault statistics
+   */
+  async getVaultStats(): Promise<any> {
+    const heatMap = await this.loadHeatMap();
+    const vaultPath = process.env.OBSIDIAN_VAULT_PATH || 
+      '/Users/bard/Code/claude-brain/data/BrainVault';
+    
+    return {
+      vaultPath,
+      mercuryPath: this.mercuryPath,
+      totalNotes: heatMap.nodes.length,
+      totalConnections: heatMap.edges.length,
+      totalSessions: heatMap.paths.length,
+      hottest: heatMap.nodes.slice(0, 3).map(([path, data]) => ({
+        path,
+        heat: data.heat,
+        accesses: data.accessCount
+      }))
+    };
+  }
 
   private async loadHeatMap(): Promise<HeatMapData> {
     const heatMapPath = path.join(this.mercuryPath, 'evolution', 'heat-map.json');
