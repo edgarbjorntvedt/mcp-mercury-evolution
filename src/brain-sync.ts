@@ -44,7 +44,7 @@ export class BrainSync {
   private async syncBrainToMercury(): Promise<any> {
     // For now, return placeholder until Brain provides an API
     // In future, this would read from Brain's SQLite database
-    console.log('Brain to Mercury sync would extract patterns from Brain database');
+    console.error('Brain to Mercury sync would extract patterns from Brain database');
     
     return {
       pathsSynced: 0,
@@ -58,7 +58,7 @@ export class BrainSync {
    */
   private async syncMercuryToBrain(): Promise<any> {
     // For now, return placeholder until Brain provides an API
-    console.log('Mercury to Brain sync would export hot paths to Brain');
+    console.error('Mercury to Brain sync would export hot paths to Brain');
     
     const heatMap = await this.evolutionAPI.getHeatMap(20);
     
@@ -139,6 +139,6 @@ export class BrainSync {
   private async updateMercuryHeat(nodePath: string, heat: number): Promise<void> {
     // This would ideally use the evolution API
     // For now, simplified direct update
-    console.log(`Would update Mercury heat for ${nodePath} to ${heat}`);
+    console.error(`Would update Mercury heat for ${nodePath} to ${heat}`);
   }
 }
