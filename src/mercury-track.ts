@@ -7,6 +7,9 @@
 
 import { MercuryEvolutionAPI } from './evolution-api.js';
 
+const validActions = ['create', 'read', 'update', 'delete', 'list'] as const;
+type Action = typeof validActions[number];
+
 const api = new MercuryEvolutionAPI();
 
 async function track() {
@@ -18,10 +21,11 @@ async function track() {
   }
   
   try {
-    await api.trackBrainNoteAccess(action, path);
+    await api.trackBrainNoteAccess(action as Action, path);
     console.log(JSON.stringify({ success: true }));
   } catch (error) {
-    console.error(JSON.stringify({ error: error.message }));
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(JSON.stringify({ error: message }));
     process.exit(1);
   }
 }
