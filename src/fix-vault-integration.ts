@@ -17,12 +17,12 @@ export const FIXED_CONFIG = {
   "mercury-evolution": {
     "command": "node",
     "args": [
-      "/Users/bard/Code/mcp-mercury-evolution/dist/index.js"
+      "/path/to/mcp-mercury-evolution/dist/index.js"
     ],
     "env": {
-      "MERCURY_VAULT_PATH": "/Users/bard/Code/claude-brain/data/BrainVault/.mercury",
-      "BRAIN_DB_PATH": "/Users/bard/mcp/brain-data/brain.db",
-      "OBSIDIAN_VAULT_PATH": "/Users/bard/Code/claude-brain/data/BrainVault"
+      "MERCURY_VAULT_PATH": "/path/to/your/vault/.mercury",
+      "BRAIN_DB_PATH": "/path/to/your/brain.db",
+      "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
     }
   }
 };
@@ -32,7 +32,7 @@ export const FIXED_CONSTRUCTOR = `
   constructor(vaultPath?: string) {
     // Use BrainVault's .mercury directory
     const obsidianVault = process.env.OBSIDIAN_VAULT_PATH || 
-      '/Users/bard/Code/claude-brain/data/BrainVault';
+      '/path/to/your/vault';
     
     this.mercuryPath = vaultPath || 
       process.env.MERCURY_VAULT_PATH || 

@@ -33,8 +33,7 @@ export class MercuryEvolutionAPI {
 
   constructor(vaultPath?: string) {
     // Use BrainVault's .mercury directory
-    const obsidianVault = process.env.OBSIDIAN_VAULT_PATH || 
-      '/Users/bard/Code/claude-brain/data/BrainVault';
+    const obsidianVault = process.env.OBSIDIAN_VAULT_PATH || './vault';
     
     this.mercuryPath = vaultPath || 
       process.env.MERCURY_VAULT_PATH || 
@@ -259,8 +258,7 @@ export class MercuryEvolutionAPI {
    */
   async getVaultStats(): Promise<any> {
     const heatMap = await this.loadHeatMap();
-    const vaultPath = process.env.OBSIDIAN_VAULT_PATH || 
-      '/Users/bard/Code/claude-brain/data/BrainVault';
+    const vaultPath = process.env.OBSIDIAN_VAULT_PATH || './vault';
     
     return {
       vaultPath,

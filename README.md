@@ -13,14 +13,14 @@ An MCP server that adds Context Evolution Engine features to Claude's memory sys
 ## Installation
 
 ```bash
-cd /Users/bard/Code/mcp-mercury-evolution
+# Clone and install
 npm install
 npm run build
 ```
 
 ## Configuration
 
-Add to your Claude Desktop config:
+Add to your Claude Desktop config (replace `/path/to/mcp-mercury-evolution` with your actual path):
 
 ```json
 {
@@ -29,11 +29,11 @@ Add to your Claude Desktop config:
     "mercury-evolution": {
       "command": "node",
       "args": [
-        "/Users/bard/Code/mcp-mercury-evolution/dist/index.js"
+        "/path/to/mcp-mercury-evolution/dist/index.js"
       ],
       "env": {
         "MERCURY_VAULT_PATH": "/path/to/your/vault/.mercury",
-        "BRAIN_DB_PATH": "/Users/bard/mcp/brain-data/brain.db"
+        "BRAIN_DB_PATH": "/path/to/your/brain.db"
       }
     }
   }
