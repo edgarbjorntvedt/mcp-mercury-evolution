@@ -87,6 +87,9 @@ export class MercuryEvolutionAPI {
       timestamp: Date.now()
     });
 
+    // Save session with updated data
+    await this.saveSession();
+
     // Update heat in real-time
     await this.updateNodeHeat(resourcePath);
     
