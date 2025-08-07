@@ -1,7 +1,46 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 import * as yaml from 'js-yaml';
 import { createHash } from 'crypto';
+
+// Add similarity function for intent matching
+function similarity(a: string, b: string): number {
+  const longerLength = Math.max(a.length, b.length);
+  if (longerLength === 0) return 1.0;
+  
+  // Simple Levenshtein-based similarity
+  const editDistance = levenshteinDistance(a.toLowerCase(), b.toLowerCase());
+  return (longerLength - editDistance) / longerLength;
+}
+
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
 
 interface Session {
   id: string;
@@ -32,14 +71,12 @@ export class MercuryEvolutionAPI {
   private currentSession: Session | null = null;
 
   constructor(vaultPath?: string) {
-    // Use BrainVault's .mercury directory
-    const obsidianVault = process.env.OBSIDIAN_VAULT_PATH || './vault';
-    
+    // Use new consolidated Brain data location
     this.mercuryPath = vaultPath || 
       process.env.MERCURY_VAULT_PATH || 
-      path.join(obsidianVault, '.mercury');
+      path.join(os.homedir(), '.claude-brain', 'mercury-evolution');
     
-    // Ensure Mercury directory exists in the vault
+    // Ensure Mercury directory exists
     this.ensureMercuryDir();
   }
   
@@ -87,6 +124,9 @@ export class MercuryEvolutionAPI {
       path: resourcePath,
       timestamp: Date.now()
     });
+
+    // Save session with updated data
+    await this.saveSession();
 
     // Update heat in real-time
     await this.updateNodeHeat(resourcePath);
@@ -208,7 +248,7 @@ export class MercuryEvolutionAPI {
     const heatMap = await this.loadHeatMap();
     
     // Find relevant paths
-    const relevantPaths = this.findRelevantPaths(analysis, heatMap);
+    const relevantPaths = this.findRelevantPaths(analysis, intent, heatMap);
     
     // Calculate loading plan
     const loadedPaths = this.calculateLoadingPlan(relevantPaths, maxTokens);
@@ -448,19 +488,61 @@ export class MercuryEvolutionAPI {
     return alternatives.slice(0, 2);
   }
 
-  private findRelevantPaths(analysis: any, heatMap: HeatMapData): any[] {
-    // Find paths matching intent
-    const matchingPaths = heatMap.paths.filter(p => 
-      p.intent === analysis.intent && p.success > 0.5
-    );
+  private findRelevantPaths(analysis: any, originalInput: string, heatMap: HeatMapData): any[] {
+    // Enhanced intent matching algorithm
+    const results = [];
+    const threshold = 0.3;
     
-    // Sort by relevance (heat * success)
-    return matchingPaths
-      .map(p => ({
-        ...p,
-        relevance: p.heat * p.success
-      }))
-      .sort((a, b) => b.relevance - a.relevance);
+    for (const path of heatMap.paths) {
+      if (path.success <= 0.5) continue; // Skip low-success paths
+      
+      let score = 0;
+      const reasons = [];
+      
+      // 1. Exact intent match (highest priority)
+      if (path.intent === analysis.intent) {
+        score += 1.0;
+        reasons.push("exact_intent_match");
+      }
+      
+      // 2. Similarity to original input
+      const similarityScore = similarity(originalInput, path.intent);
+      if (similarityScore > 0.3) {
+        score += similarityScore * 0.8;
+        reasons.push(`text_similarity_${similarityScore.toFixed(2)}`);
+      }
+      
+      // 3. Keyword overlap
+      const inputWords = new Set(originalInput.toLowerCase().split(' '));
+      const pathWords = new Set(path.intent.toLowerCase().split(' '));
+      const intersection = new Set([...inputWords].filter(word => pathWords.has(word)));
+      const overlap = intersection.size;
+      
+      if (overlap > 0) {
+        const overlapScore = overlap / Math.max(inputWords.size, pathWords.size);
+        score += overlapScore * 0.6;
+        reasons.push(`keyword_overlap_${overlap}`);
+      }
+      
+      // 4. Intent category matching
+      const analyzedPathIntent = this.detectIntent(path.intent);
+      if (analysis.intent !== 'general' && analyzedPathIntent === analysis.intent) {
+        score += 0.5;
+        reasons.push("category_match");
+      }
+      
+      // Only include if above threshold
+      if (score >= threshold) {
+        results.push({
+          ...path,
+          relevance: score,
+          matchReasons: reasons
+        });
+      }
+    }
+    
+    // Sort by relevance score
+    return results.sort((a, b) => b.relevance - a.relevance);
   }
 
   private calculateLoadingPlan(paths: any[], maxTokens: number): any[] {
