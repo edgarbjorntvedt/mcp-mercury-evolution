@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 import * as yaml from 'js-yaml';
 import { createHash } from 'crypto';
 
@@ -32,14 +33,12 @@ export class MercuryEvolutionAPI {
   private currentSession: Session | null = null;
 
   constructor(vaultPath?: string) {
-    // Use BrainVault's .mercury directory
-    const obsidianVault = process.env.OBSIDIAN_VAULT_PATH || './vault';
-    
+    // Use new consolidated Brain data location
     this.mercuryPath = vaultPath || 
       process.env.MERCURY_VAULT_PATH || 
-      path.join(obsidianVault, '.mercury');
+      path.join(os.homedir(), '.claude-brain', 'mercury-evolution');
     
-    // Ensure Mercury directory exists in the vault
+    // Ensure Mercury directory exists
     this.ensureMercuryDir();
   }
   
