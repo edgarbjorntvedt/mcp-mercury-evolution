@@ -70,9 +70,9 @@ export class MercuryEvolutionAPI {
   private mercuryPath: string;
   private currentSession: Session | null = null;
 
-  constructor(vaultPath?: string) {
+  constructor() {
     // Use new consolidated Brain data location
-    this.mercuryPath = vaultPath || 
+    this.mercuryPath =
       process.env.MERCURY_VAULT_PATH || 
       path.join(os.homedir(), '.claude-brain', 'mercury-evolution');
     
