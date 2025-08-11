@@ -550,13 +550,17 @@ export class MercuryEvolutionAPI {
     let totalTokens = 0;
     
     for (const path of paths) {
+      // Safe path access with fallback
+      const pathSequence = path.sequence || [];
+      const firstPath = pathSequence.length > 0 ? pathSequence[0] : `unknown-path-${path.id || 'no-id'}`;
+      
       // Estimate tokens (simplified)
-      const estimatedTokens = path.sequence.length * 500;
+      const estimatedTokens = Math.max(pathSequence.length * 500, 200);
       
       if (totalTokens + estimatedTokens <= maxTokens) {
         loadedPaths.push({
-          path: path.sequence[0],
-          gradient: path.relevance,
+          path: firstPath,
+          gradient: path.relevance || 0.1,
           tokens: estimatedTokens
         });
         totalTokens += estimatedTokens;
